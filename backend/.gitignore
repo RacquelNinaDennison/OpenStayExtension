@@ -1,0 +1,16 @@
+# Solana local validator / test ledgers
+backend/test-ledger/
+**/test-ledger/
+**/validator-ledger/
+**/ledger/
+
+# Common noise
+*.log
+.DS_Store
+
+# Secrets/keys/env (adjust if needed)
+*.keypair.json
+*wallet.json
+**/id.json
+.env
+.env.*
