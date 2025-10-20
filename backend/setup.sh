@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# --- 0️⃣ Define Static Keypaths and IDs ---
+# --- Define Static Keypaths and IDs ---
 # Your main wallet to pay for transactions and own the vault.
 BACKEND_WALLET=~/backend-wallet.json
 

@@ -5,7 +5,6 @@ import (
 	"OpenStay/pkg/api"
 	"log"
 	"net/http"
-
 	"github.com/joho/godotenv"
 )
 
