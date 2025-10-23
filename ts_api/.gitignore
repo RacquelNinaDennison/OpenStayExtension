@@ -1,2 +1,7 @@
 node_modules
 .env
+src/test-ledger
+# Solana local validator
+ ts_api/test-ledger/
+ ts_api/test-ledger/**
+
