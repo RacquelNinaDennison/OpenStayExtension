@@ -1,0 +1,15 @@
+[programs.localnet]
+timelock_escrow = "Fg6PaFpoGXkYsidMpWFKw5x1nVvgu4fQnQJ7j2YxEscR" # keep local if you want
+
+[programs.devnet]
+timelock_escrow = "GuKWhJ6x5t42C3WCPbsgyMhbo12kjDSp1bQv55AeaUWX"
+
+[provider]
+# Either:
+# cluster = "Devnet"
+# or use the full URL:
+cluster = "https://api.devnet.solana.com"
+wallet = "~/.config/solana/id.json"
+
+[toolchain]
+anchor_version = "0.32.1"

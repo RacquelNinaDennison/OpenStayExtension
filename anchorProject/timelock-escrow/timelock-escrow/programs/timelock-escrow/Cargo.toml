@@ -1,0 +1,23 @@
+[package]
+name = "timelock-escrow"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+# Keep program lean for SBF:
+anchor-spl  = { version = "0.32.1", default-features = false, features = ["token", "associated_token"] }
+
+[features]
+# This feature is activated by `anchor build` during the IDL generation phase.
+# It enables anchor-spl's idl-build *and* token_2022 so token_interface is available,
+# without affecting the normal SBF program build.
+idl-build = [
+  "anchor-lang/idl-build",
+  "anchor-spl/idl-build",
+  "anchor-spl/token_2022"
+]
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "timelock_escrow"
