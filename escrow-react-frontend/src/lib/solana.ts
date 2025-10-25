@@ -5,7 +5,14 @@ export const API  = import.meta.env.VITE_ESCROW_API as string;
 export const RPC  = import.meta.env.VITE_SOLANA_RPC as string;
 export const USDC_DECIMALS = Number(import.meta.env.VITE_USDC_DECIMALS || 6);
 
-export const connection = new Connection(RPC, "confirmed");
+const ws = RPC.startsWith("https://")
+  ? RPC.replace("https://", "wss://")
+  : RPC.replace("http://", "ws://");
+
+export const connection = new Connection(RPC, {
+  commitment: "confirmed",
+  wsEndpoint: ws,       
+});
 
 export type SolanaProvider = {
   isPhantom?: boolean;

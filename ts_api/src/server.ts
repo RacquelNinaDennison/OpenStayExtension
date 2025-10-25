@@ -324,6 +324,6 @@ app.post("/release", async (req, res) => {
   }
 });
 
-// ---------- Start ----------
+
 const PORT = Number(process.env.PORT || 3001);
 app.listen(PORT, () => console.log(`Escrow API listening on :${PORT}`));
