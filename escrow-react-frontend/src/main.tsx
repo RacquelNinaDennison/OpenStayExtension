@@ -1,8 +1,5 @@
-// src/main.tsx
 import { Buffer } from "buffer";
 import process from "process";
-
-// Polyfill Node globals for browser
 (window as any).global = window;
 (window as any).process = (window as any).process || process;
 (window as any).Buffer = (window as any).Buffer || Buffer;

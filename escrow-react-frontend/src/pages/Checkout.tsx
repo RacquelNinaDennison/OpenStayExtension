@@ -49,7 +49,6 @@ export default function Checkout({ wallet }: { wallet: string | null }) {
     p.on?.("accountChanged", onAccountChanged);
 
     return () => {
-      // not all providers support removeAllListeners
       p.removeAllListeners?.();
     };
   }, []);
@@ -212,7 +211,6 @@ export default function Checkout({ wallet }: { wallet: string | null }) {
         throw new Error("Wallet cannot sign transactions");
       }
 
-      // ====== Persist local dashboard record ======
       const rec = {
         id: `${l.id}-${releaseTs}`,
         listingId: l.id,

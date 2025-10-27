@@ -59,7 +59,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Top Destinations */}
       <section className="destinations container">
         <h3 className="section-sub">Top Destinations</h3>
         <div className="card-row">

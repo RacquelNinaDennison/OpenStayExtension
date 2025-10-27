@@ -1,4 +1,3 @@
-// src/lib/escrowClient.ts
 import {
   Connection,
   PublicKey,
@@ -11,10 +10,10 @@ import {
   getAccount as getSplAccount,
   createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
-// src/lib/escrowClient.ts
+
 import { Buffer } from "buffer";
 
-// ---------- Safe env access (defer until used) ----------
+
 type EscrowConfig = {
   RPC: string;
   PROGRAM_ID: PublicKey;
@@ -37,7 +36,7 @@ function getConfig(): EscrowConfig {
   };
 }
 
-// Create a single connection that is initialized on first use.
+
 let _connection: Connection | null = null;
 export function connection(): Connection {
   if (_connection) return _connection;
@@ -46,7 +45,7 @@ export function connection(): Connection {
   return _connection;
 }
 
-// ---------- Phantom provider ----------
+
 export type SolanaProvider = {
   isPhantom?: boolean;
   publicKey?: { toBase58(): string };
@@ -60,7 +59,7 @@ export const phantom = (): SolanaProvider | null => {
   return w?.solana ?? w?.phantom?.solana ?? null;
 };
 
-// ---------- Small binary helpers (Buffer-free) ----------
+
 function i64LeBytes(n: number): Uint8Array {
   const buf = new ArrayBuffer(8);
   new DataView(buf).setBigInt64(0, BigInt(n), true);
@@ -80,16 +79,14 @@ function concatBytes(...chunks: Uint8Array[]): Uint8Array {
   return out;
 }
 
-// Anchor discriminators (precomputed):
-// sha256("global:initialize").slice(0,8) and sha256("global:release").slice(0,8)
 const DISC_INIT = new Uint8Array([0xaf,0xaf,0x6d,0x1f,0x0d,0x98,0x9b,0xed]);
 const DISC_RELEASE = new Uint8Array([0xfd,0xf9,0x0f,0xce,0x1c,0x7f,0xc1,0xf1]);
 
-// Well-known programs
+
 const TOKEN_PROGRAM_ID      = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const ASSOCIATED_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 
-// ---------- PDA & ATAs ----------
+
 export function escrowPda(
   initializer: PublicKey,
   beneficiary: PublicKey,
@@ -141,7 +138,6 @@ function ixInitialize(params: {
 
   const data = concatBytes(DISC_INIT, u64LeBytes(params.amount), i64LeBytes(params.releaseTs));
 
-  // Type expects Buffer, but Uint8Array works at runtime; cast to satisfy TS.
   return new TransactionInstruction({ programId: PROGRAM_ID, keys, data: data as unknown as Buffer });
 }
 

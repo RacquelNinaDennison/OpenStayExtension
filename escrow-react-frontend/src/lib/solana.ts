@@ -1,4 +1,3 @@
-// src/lib/solana.ts
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 
 export const API  = import.meta.env.VITE_ESCROW_API as string;
