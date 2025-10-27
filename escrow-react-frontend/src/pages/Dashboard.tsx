@@ -1,5 +1,6 @@
+// src/pages/Dashboard.tsx
 import { useEffect, useMemo, useState } from "react";
-import { API, connection } from "../lib/solana";
+import { phantom, releaseWithWallet, connection } from "../lib/escrowClient";
 
 type Booking = {
   id: string;
@@ -10,123 +11,120 @@ type Booking = {
   releaseTs: number;
 };
 
+function readBookings(): Booking[] {
+  try {
+    const raw = localStorage.getItem("bookings");
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((x) => x && typeof x === "object" && x.id && x.initializer);
+  } catch {
+    return [];
+  }
+}
+
 export default function Dashboard({ wallet }: { wallet: string | null }) {
   const [items, setItems] = useState<Booking[]>([]);
-
-  // refresh every ~1s to keep countdown fresh
-  const [, forceTick] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => forceTick((n) => n + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [err, setErr] = useState<string>("");
 
   useEffect(() => {
-    const all: Booking[] = JSON.parse(localStorage.getItem("bookings") || "[]");
-    setItems(all.filter((x) => x.initializer === wallet));
+    setItems(readBookings());
   }, [wallet]);
 
-  const now = Math.floor(Date.now() / 1000);
+  const myItems = useMemo(
+    () => (wallet ? items.filter((x) => x.initializer === wallet) : []),
+    [items, wallet]
+  );
 
-  function formatCountdown(target: number) {
-    const delta = Math.max(0, target - now);
-    const d = Math.floor(delta / 86400);
-    const h = Math.floor((delta % 86400) / 3600);
-    const m = Math.floor((delta % 3600) / 60);
-    const s = delta % 60;
-    if (d > 0) return `${d}d ${h}h ${m}m`;
-    if (h > 0) return `${h}h ${m}m`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
-  }
-
-  async function release(rec: Booking) {
+  async function handleRelease(rec: Booking) {
+    setErr("");
+    setBusyId(rec.id);
     try {
-      const resp = await fetch(`${API}/release`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          initializer: rec.initializer,
-          beneficiary: rec.beneficiary,
-          releaseTs: rec.releaseTs,
-        }),
-      });
-      if (!resp.ok) throw new Error(await resp.text());
-      const { signature } = await resp.json();
-      await connection.confirmTransaction(signature, "confirmed");
+      const p = phantom();
+      if (!p?.isPhantom) throw new Error("Phantom not detected");
+      if (!p.publicKey) await p.connect();
 
-      alert(`Released! ${signature.slice(0, 8)}…`);
-      // remove released item locally (optional)
-      const next = items.filter((x) => x.id !== rec.id);
-      setItems(next);
-      const all: Booking[] = JSON.parse(localStorage.getItem("bookings") || "[]");
-      localStorage.setItem("bookings", JSON.stringify(all.filter((x) => x.id !== rec.id)));
+      console.log("[DASH] release start", rec);
+      const sig = await releaseWithWallet({
+        wallet: p,
+        initializer: rec.initializer,
+        beneficiary: rec.beneficiary,
+        releaseTs: rec.releaseTs,
+      });
+      console.log("[DASH] release signature", sig);
+
+      await connection().confirmTransaction(sig, "confirmed");
+      alert(`Released! ${sig.slice(0, 8)}…`);
     } catch (e: any) {
-      alert("Release failed: " + (e.message || e));
+      const msg = e?.message || "Release failed. See console.";
+      setErr(msg);
+      console.error("[Dashboard release error]", e);
+    } finally {
+      setBusyId(null);
     }
   }
 
-  const body = useMemo(() => {
-    if (!wallet) return <div className="muted">Connect wallet to view.</div>;
-    if (items.length === 0)
-      return (
-        <div className="empty-state">
-          <div className="empty-title">No active escrows</div>
-          <div className="empty-sub">Holds you create will appear here.</div>
-        </div>
-      );
-
-    return (
-      <div className="escrow-list">
-        {items.map((r) => {
-          const releasable = now >= r.releaseTs;
-          const countdown = formatCountdown(r.releaseTs);
-          return (
-            <div key={r.id} className="escrow-item">
-              <div className="escrow-main">
-                <div className="pill-id">#{r.listingId}</div>
-                <div className="amount">${Number(r.totalUi).toFixed(2)} USDC</div>
-              </div>
-
-              <div className="escrow-meta">
-                <div className="meta-row">
-                  <span className="meta-label">Releases</span>
-                  <span className="meta-value">
-                    {new Date(r.releaseTs * 1000).toLocaleString()}
-                  </span>
-                </div>
-                <div className="meta-row">
-                  <span className="meta-label">Status</span>
-                  <span className={`badge ${releasable ? "ok" : "wait"}`}>
-                    {releasable ? "Ready to release" : `Unlocks in ${countdown}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className="escrow-actions">
-                <button
-                  className="btn btn-accent wide"
-                  onClick={() => release(r)}
-                  disabled={!releasable}
-                  aria-disabled={!releasable}
-                  title={releasable ? "Release funds" : "Not yet unlockable"}
-                >
-                  Release
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }, [items, wallet, now]);
-
   return (
-    <div className="dash-card">
-      <div className="dash-header">
-        <h2 className="dash-title">Your Escrows</h2>
-        <p className="dash-sub">Track holds and release funds when the time arrives.</p>
+    <div className="card main-card" style={{ padding: 24 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <h2 className="h2" style={{ margin: 0 }}>Your Escrows</h2>
+          <div className="muted" style={{ marginTop: 4 }}>
+            Manage holds you’ve created while booking.
+          </div>
+        </div>
       </div>
-      {body}
+
+      {err && (
+        <div className="status err" style={{ marginTop: 16, padding: "12px 14px", borderRadius: 10 }}>
+          {err}
+        </div>
+      )}
+
+      {!wallet && (
+        <div className="card" style={{ marginTop: 16, padding: 16, borderRadius: 12, background: "#fafafa" }}>
+          <div className="muted">Connect your wallet to view your escrows.</div>
+        </div>
+      )}
+
+      {wallet && myItems.length === 0 && (
+        <div className="card" style={{ marginTop: 16, padding: 16, borderRadius: 12, background: "#fafafa" }}>
+          <div className="muted">No active escrows yet.</div>
+        </div>
+      )}
+
+      {wallet && myItems.length > 0 && (
+        <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
+          {myItems.map((r) => {
+            const canRelease = Date.now() / 1000 >= (r.releaseTs || 0);
+            return (
+              <div key={r.id} className="card" style={{ padding: 16, borderRadius: 12, boxShadow: "0 1px 3px rgba(16,24,40,0.08)" }}>
+                <div className="row" style={{ alignItems: "center", gap: 16, justifyContent: "space-between", flexWrap: "wrap" }}>
+                  <div style={{ minWidth: 220 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{r.listingId}</div>
+                    <div className="muted" style={{ marginTop: 4 }}>Total: ${r.totalUi} USDC</div>
+                    <div className="muted" style={{ marginTop: 4 }}>
+                      Releases: {r.releaseTs ? new Date(r.releaseTs * 1000).toLocaleString() : "—"}
+                    </div>
+                  </div>
+                  <div className="row" style={{ gap: 8 }}>
+                    <button
+                      className="btn btn-accent"
+                      onClick={() => handleRelease(r)}
+                      disabled={busyId === r.id || !canRelease}
+                      title={!canRelease ? "Release time not reached yet" : ""}
+                      style={{ minWidth: 140 }}
+                    >
+                      {busyId === r.id ? "Releasing…" : "Release"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

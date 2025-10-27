@@ -3,6 +3,8 @@ import Listings from "./pages/Listings";
 import ListingDetail from "./pages/ListingDetail";
 import Checkout from "./pages/Checkout";
 import Dashboard from "./pages/Dashboard";
+import Landing from "./pages/Landing";
+import GetStarted from "./pages/GetStarted";
 import { useEffect, useState } from "react";
 import { connectPhantom, phantom } from "./lib/solana";
 import "./index.css";
@@ -31,20 +33,25 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {/* topbar kept as-is, but update the brand to go home */}
       <div className="topbar">
         <div className="topbar-wrap">
-          <div className="brand" onClick={() => nav("/")}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.1 6.3L22 9.3l-5 4.9 1.2 7-6.2-3.3L5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>
+          <div className="brand" onClick={() => nav("/")}> {/* go to Landing */}
+            {/* logo svg */}
             <span>OpenStay</span>
           </div>
+
+          {/* search stays sends to /listings */}
           <div className="searchbar">
             <input placeholder="Search destinations, dates, guests…" />
-            <button className="btn btn-ghost">Search</button>
+            <button className="btn btn-ghost" onClick={() => nav("/listings")}>Search</button>
           </div>
+
           <div className="nav-actions">
             <NavLink to="/dashboard" className="toplink">Dashboard</NavLink>
             <button className="btn btn-secondary" onClick={connect}>
-              {wallet ? `Connected: ${wallet.slice(0,4)}...${wallet.slice(-4)}` : "Connect Phantom"}
+              {wallet ? `Connected: ${wallet.slice(0, 4)}...${wallet.slice(-4)}`
+                      : "Connect Phantom"}
             </button>
           </div>
         </div>
@@ -52,14 +59,20 @@ export default function App() {
 
       <div className="subnav">
         <div className="subnav-wrap">
-          <NavLink className={({isActive})=>`pill ${isActive?'active':''}`} to="/" end>Listings</NavLink>
-          <NavLink className={({isActive})=>`pill ${isActive?'active':''}`} to="/dashboard">Your Escrows</NavLink>
+          <NavLink className={({isActive}) => `pill ${isActive ? "active":""}`} to="/listings">
+            Listings
+          </NavLink>
+          <NavLink className={({isActive}) => `pill ${isActive ? "active":""}`} to="/dashboard">
+            Your Escrows
+          </NavLink>
         </div>
       </div>
 
       <main className="container">
         <Routes>
-          <Route path="/" element={<Listings />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/get-started" element={<GetStarted />} />
+          <Route path="/listings" element={<Listings />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/checkout/:id" element={<Checkout wallet={wallet} />} />
           <Route path="/dashboard" element={<Dashboard wallet={wallet} />} />

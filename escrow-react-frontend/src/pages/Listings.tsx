@@ -6,7 +6,6 @@ export default function Listings() {
     <div className="card main-card">
       <div className="row" style={{marginBottom:8}}>
         <h2 className="h2">Explore stays</h2>
-        <span className="mute">Hand-picked demo data</span>
       </div>
 
       <div className="grid section">
